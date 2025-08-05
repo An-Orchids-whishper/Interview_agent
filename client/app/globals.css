@@ -2,78 +2,214 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  html {
-    font-family: system-ui, sans-serif;
-  }
-  
-  body {
-    @apply bg-gray-50 text-gray-900;
+:root {
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 214, 219, 220;
+  --background-end-rgb: 255, 255, 255;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --foreground-rgb: 255, 255, 255;
+    --background-start-rgb: 0, 0, 0;
+    --background-end-rgb: 0, 0, 0;
   }
 }
 
-@layer components {
-  .btn-primary {
-    @apply bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2;
-  }
-  
-  .btn-secondary {
-    @apply bg-secondary-200 hover:bg-secondary-300 text-secondary-800 font-medium py-2 px-4 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-secondary-500 focus:ring-offset-2;
-  }
-  
-  .btn-danger {
-    @apply bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2;
-  }
-  
-  .chat-message {
-    @apply mb-4 p-4 rounded-lg max-w-3xl;
-  }
-  
-  .chat-message.user {
-    @apply bg-primary-100 text-primary-900 ml-auto;
-  }
-  
-  .chat-message.assistant {
-    @apply bg-white text-gray-900 border border-gray-200;
-  }
-  
-  .voice-wave {
-    @apply w-1 bg-primary-500 rounded-full mx-px;
-    animation: wave 1.5s ease-in-out infinite;
-  }
-  
-  .voice-wave:nth-child(2) {
-    animation-delay: 0.1s;
-  }
-  
-  .voice-wave:nth-child(3) {
-    animation-delay: 0.2s;
-  }
-  
-  .voice-wave:nth-child(4) {
-    animation-delay: 0.3s;
-  }
-  
-  .voice-wave:nth-child(5) {
-    animation-delay: 0.4s;
-  }
+body {
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(
+      to bottom,
+      transparent,
+      rgb(var(--background-end-rgb))
+    )
+    rgb(var(--background-start-rgb));
 }
 
-/* Custom scrollbar */
+/* Custom Scrollbar */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+}
+
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 3px;
+  background: transparent;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
+  background-color: rgba(156, 163, 175, 0.5);
   border-radius: 3px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
+  background-color: rgba(156, 163, 175, 0.8);
+}
+
+/* Blob Animations */
+@keyframes blob {
+  0% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+}
+
+.animate-blob {
+  animation: blob 7s infinite;
+}
+
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+
+.animation-delay-4000 {
+  animation-delay: 4s;
+}
+
+/* Message animations */
+.message-enter {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.message-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 300ms, transform 300ms;
+}
+
+/* Voice controls animations */
+.voice-recording {
+  animation: pulse-slow 2s infinite;
+}
+
+/* Voice wave animation */
+@keyframes wave {
+  0%, 100% {
+    transform: scaleY(1);
+  }
+  50% {
+    transform: scaleY(1.5);
+  }
+}
+
+.voice-wave {
+  animation: wave 1.5s ease-in-out infinite;
+}
+
+.voice-wave:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.voice-wave:nth-child(3) {
+  animation-delay: 0.2s;
+}
+
+.voice-wave:nth-child(4) {
+  animation-delay: 0.3s;
+}
+
+.voice-wave:nth-child(5) {
+  animation-delay: 0.4s;
+}
+
+/* Loading spinner */
+.loading-spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Fade in animations */
+.fade-in {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Slide up animations */
+.slide-up {
+  animation: slideUp 0.5s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Glass morphism effect */
+.glass {
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.125);
+}
+
+/* Floating elements */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Shimmer effect */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.shimmer {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
 }

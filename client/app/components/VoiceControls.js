@@ -1,12 +1,13 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
-import { motion } from 'framer-motion'
+import { useState, useRef, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { 
   MicrophoneIcon, 
-  StopIcon,
+  StopIcon, 
   SpeakerWaveIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  CheckCircleIcon
 } from '@heroicons/react/24/outline'
 
 export default function VoiceControls({ onVoiceMessage, disabled }) {
