@@ -1,0 +1,25 @@
+{
+  "name": "interview-agent-server",
+  "version": "1.0.0",
+  "description": "Backend server for real-time interview agent",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.7.4",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "@langchain/core": "^0.1.48",
+    "@langchain/langgraph": "^0.0.19",
+    "@langchain/google-genai": "^0.0.11",
+    "langchain": "^0.1.25",
+    "uuid": "^9.0.1",
+    "mongodb": "^6.3.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}
