@@ -1,68 +1,116 @@
 'use client'
 
-import { useState } from 'react'
-import { motion } from 'framer-motion'
-import { UserIcon, BriefcaseIcon, AcademicCapIcon, MicrophoneIcon } from '@heroicons/react/24/outline'
+import React, { useState, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { 
+  UserIcon, 
+  BriefcaseIcon, 
+  AcademicCapIcon, 
+  ChipIcon,
+  PlayIcon,
+  SparklesIcon,
+  MicrophoneIcon,
+  ChatBubbleLeftRightIcon
+} from '@heroicons/react/24/outline'
 
 export default function WelcomeScreen({ onStartInterview }) {
+  const [currentStep, setCurrentStep] = useState(0)
   const [formData, setFormData] = useState({
     name: '',
     position: '',
     experience: '',
     skills: []
   })
-  const [currentSkill, setCurrentSkill] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target
+  const steps = [
+    {
+      title: "Welcome to AI Interview",
+      subtitle: "Your intelligent interview partner",
+      icon: SparklesIcon,
+      color: "from-purple-500 to-pink-500"
+    },
+    {
+      title: "Personal Information",
+      subtitle: "Tell us about yourself",
+      icon: UserIcon,
+      color: "from-blue-500 to-indigo-500"
+    },
+    {
+      title: "Professional Details",
+      subtitle: "Your career information",
+      icon: BriefcaseIcon,
+      color: "from-green-500 to-teal-500"
+    },
+    {
+      title: "Skills & Experience",
+      subtitle: "What makes you unique",
+      icon: ChipIcon,
+      color: "from-orange-500 to-red-500"
+    }
+  ]
+
+  const skillSuggestions = [
+    'JavaScript', 'Python', 'React', 'Node.js', 'TypeScript', 'SQL', 'AWS', 'Docker', 
+    'Git', 'HTML/CSS', 'MongoDB', 'PostgreSQL', 'Express.js', 'Next.js', 'Vue.js', 
+    'Angular', 'Redux', 'GraphQL', 'REST APIs', 'Microservices', 'Kubernetes', 'CI/CD'
+  ]
+
+  const handleSkillToggle = (skill) => {
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      skills: prev.skills.includes(skill)
+        ? prev.skills.filter(s => s !== skill)
+        : [...prev.skills, skill]
     }))
   }
 
-  const handleAddSkill = (e) => {
-    e.preventDefault()
-    if (currentSkill.trim() && !formData.skills.includes(currentSkill.trim())) {
-      setFormData(prev => ({
-        ...prev,
-        skills: [...prev.skills, currentSkill.trim()]
-      }))
-      setCurrentSkill('')
+  const handleNext = () => {
+    if (currentStep < steps.length - 1) {
+      setCurrentStep(prev => prev + 1)
     }
   }
 
-  const handleRemoveSkill = (skillToRemove) => {
-    setFormData(prev => ({
-      ...prev,
-      skills: prev.skills.filter(skill => skill !== skillToRemove)
-    }))
+  const handleBack = () => {
+    if (currentStep > 0) {
+      setCurrentStep(prev => prev - 1)
+    }
   }
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    
-    if (!formData.name.trim() || !formData.position.trim()) {
+  const handleStartInterview = () => {
+    if (!formData.name || !formData.position) {
+      alert('Please fill in at least your name and position')
       return
     }
-
-    setIsLoading(true)
     
-    // Simulate brief loading
+    setIsLoading(true)
     setTimeout(() => {
       onStartInterview(formData)
-      setIsLoading(false)
-    }, 1000)
+    }, 1500)
+  }
+
+  const isStepValid = () => {
+    switch (currentStep) {
+      case 1: return formData.name.trim().length > 0
+      case 2: return formData.position.trim().length > 0
+      case 3: return true // Skills are optional
+      default: return true
+    }
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <motion.div
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
+      {/* Background Animation */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-yellow-500 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000"></div>
+        <div className="absolute top-40 left-40 w-80 h-80 bg-pink-500 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-4000"></div>
+      </div>
+
+      <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="max-w-2xl w-full"
+        className="relative z-10 w-full max-w-2xl"
       >
         {/* Header */}
         <div className="text-center mb-8">
@@ -70,185 +118,270 @@ export default function WelcomeScreen({ onStartInterview }) {
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-            className="inline-flex items-center justify-center w-16 h-16 bg-primary-600 rounded-full mb-4"
+            className={`inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-r ${steps[currentStep].color} mb-6 shadow-2xl`}
           >
-            <MicrophoneIcon className="w-8 h-8 text-white" />
+            {React.createElement(steps[currentStep].icon, { className: "w-10 h-10 text-white" })}
           </motion.div>
           
-          <motion.h1
+          <motion.h1 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3 }}
-            className="text-4xl font-bold text-gray-900 mb-2"
+            className="text-4xl font-bold text-white mb-2"
           >
-            AI Interview Agent
+            {steps[currentStep].title}
           </motion.h1>
           
-          <motion.p
+          <motion.p 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.4 }}
-            className="text-lg text-gray-600"
+            className="text-xl text-gray-300"
           >
-            Experience the future of interviews with real-time voice interaction
+            {steps[currentStep].subtitle}
           </motion.p>
         </div>
 
-        {/* Form */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="bg-white rounded-2xl shadow-xl p-8"
-        >
-          <h2 className="text-2xl font-semibold text-gray-900 mb-6">
-            Let's get started with your interview
-          </h2>
-
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Name Input */}
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                <UserIcon className="w-4 h-4 inline mr-2" />
-                Full Name *
-              </label>
-              <input
-                type="text"
-                id="name"
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors"
-                placeholder="Enter your full name"
-              />
-            </div>
-
-            {/* Position Input */}
-            <div>
-              <label htmlFor="position" className="block text-sm font-medium text-gray-700 mb-2">
-                <BriefcaseIcon className="w-4 h-4 inline mr-2" />
-                Position Applied For *
-              </label>
-              <input
-                type="text"
-                id="position"
-                name="position"
-                value={formData.position}
-                onChange={handleInputChange}
-                required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors"
-                placeholder="e.g., Software Engineer, Product Manager"
-              />
-            </div>
-
-            {/* Experience Input */}
-            <div>
-              <label htmlFor="experience" className="block text-sm font-medium text-gray-700 mb-2">
-                <AcademicCapIcon className="w-4 h-4 inline mr-2" />
-                Years of Experience
-              </label>
-              <select
-                id="experience"
-                name="experience"
-                value={formData.experience}
-                onChange={handleInputChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors"
-              >
-                <option value="">Select experience level</option>
-                <option value="0-1">0-1 years (Entry Level)</option>
-                <option value="2-3">2-3 years (Junior)</option>
-                <option value="4-6">4-6 years (Mid-Level)</option>
-                <option value="7-10">7-10 years (Senior)</option>
-                <option value="10+">10+ years (Expert)</option>
-              </select>
-            </div>
-
-            {/* Skills Input */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Key Skills (Optional)
-              </label>
-              
-              <div className="flex gap-2 mb-3">
-                <input
-                  type="text"
-                  value={currentSkill}
-                  onChange={(e) => setCurrentSkill(e.target.value)}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors"
-                  placeholder="Add a skill (e.g., React, Python, Leadership)"
-                  onKeyPress={(e) => e.key === 'Enter' && handleAddSkill(e)}
-                />
-                <button
-                  type="button"
-                  onClick={handleAddSkill}
-                  className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
-                >
-                  Add
-                </button>
-              </div>
-
-              {/* Skills List */}
-              {formData.skills.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {formData.skills.map((skill, index) => (
-                    <motion.span
-                      key={index}
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      className="inline-flex items-center px-3 py-1 bg-primary-100 text-primary-800 rounded-full text-sm"
-                    >
-                      {skill}
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveSkill(skill)}
-                        className="ml-2 text-primary-600 hover:text-primary-800"
-                      >
-                        ×
-                      </button>
-                    </motion.span>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Submit Button */}
-            <motion.button
-              type="submit"
-              disabled={isLoading || !formData.name.trim() || !formData.position.trim()}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="w-full bg-primary-600 text-white py-4 px-6 rounded-lg font-semibold text-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              {isLoading ? (
-                <div className="flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mr-2"></div>
-                  Starting Interview...
-                </div>
-              ) : (
-                'Start My Interview'
-              )}
-            </motion.button>
-          </form>
-
-          {/* Features */}
-          <div className="mt-8 pt-6 border-t border-gray-200">
-            <h3 className="text-sm font-medium text-gray-700 mb-4">What to expect:</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
-              <div className="flex items-center">
-                <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                Voice & Text Support
-              </div>
-              <div className="flex items-center">
-                <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
-                Real-time Feedback
-              </div>
-              <div className="flex items-center">
-                <div className="w-2 h-2 bg-purple-500 rounded-full mr-2"></div>
-                Adaptive Questions
-              </div>
-            </div>
+        {/* Progress Bar */}
+        <div className="mb-8">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-sm text-gray-400">Step {currentStep + 1} of {steps.length}</span>
+            <span className="text-sm text-gray-400">{Math.round((currentStep / (steps.length - 1)) * 100)}%</span>
           </div>
+          <div className="w-full bg-gray-700 rounded-full h-2">
+            <motion.div 
+              className={`h-2 rounded-full bg-gradient-to-r ${steps[currentStep].color}`}
+              initial={{ width: 0 }}
+              animate={{ width: `${(currentStep / (steps.length - 1)) * 100}%` }}
+              transition={{ duration: 0.5 }}
+            />
+          </div>
+        </div>
+
+        {/* Content Card */}
+        <motion.div 
+          key={currentStep}
+          initial={{ opacity: 0, x: 50 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -50 }}
+          className="bg-white/10 backdrop-blur-md rounded-2xl p-8 shadow-2xl border border-white/20"
+        >
+          <AnimatePresence mode="wait">
+            {currentStep === 0 && (
+              <motion.div
+                key="welcome"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="text-center space-y-6"
+              >
+                <div className="grid grid-cols-2 gap-4 mb-8">
+                  <div className="flex items-center space-x-3 text-white">
+                    <MicrophoneIcon className="w-6 h-6 text-green-400" />
+                    <span>Voice Integration</span>
+                  </div>
+                  <div className="flex items-center space-x-3 text-white">
+                    <ChatBubbleLeftRightIcon className="w-6 h-6 text-blue-400" />
+                    <span>Real-time Chat</span>
+                  </div>
+                  <div className="flex items-center space-x-3 text-white">
+                    <SparklesIcon className="w-6 h-6 text-purple-400" />
+                    <span>AI-Powered</span>
+                  </div>
+                  <div className="flex items-center space-x-3 text-white">
+                    <AcademicCapIcon className="w-6 h-6 text-yellow-400" />
+                    <span>Smart Evaluation</span>
+                  </div>
+                </div>
+                <p className="text-gray-300 text-lg leading-relaxed">
+                  Experience the future of interviews with our AI-powered system. 
+                  Get instant feedback, practice with real scenarios, and boost your confidence.
+                </p>
+              </motion.div>
+            )}
+
+            {currentStep === 1 && (
+              <motion.div
+                key="personal"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="space-y-6"
+              >
+                <div>
+                  <label className="block text-white text-sm font-medium mb-2">
+                    Full Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                    placeholder="Enter your full name"
+                    autoFocus
+                  />
+                </div>
+              </motion.div>
+            )}
+
+            {currentStep === 2 && (
+              <motion.div
+                key="professional"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="space-y-6"
+              >
+                <div>
+                  <label className="block text-white text-sm font-medium mb-2">
+                    Position Applying For *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.position}
+                    onChange={(e) => setFormData(prev => ({ ...prev, position: e.target.value }))}
+                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                    placeholder="e.g., Frontend Developer, Product Manager"
+                    autoFocus
+                  />
+                </div>
+                <div>
+                  <label className="block text-white text-sm font-medium mb-2">
+                    Years of Experience
+                  </label>
+                  <select
+                    value={formData.experience}
+                    onChange={(e) => setFormData(prev => ({ ...prev, experience: e.target.value }))}
+                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                  >
+                    <option value="" className="text-gray-900">Select experience level</option>
+                    <option value="0-1" className="text-gray-900">0-1 years (Entry Level)</option>
+                    <option value="2-3" className="text-gray-900">2-3 years (Junior)</option>
+                    <option value="4-6" className="text-gray-900">4-6 years (Mid Level)</option>
+                    <option value="7-10" className="text-gray-900">7-10 years (Senior)</option>
+                    <option value="10+" className="text-gray-900">10+ years (Lead/Expert)</option>
+                  </select>
+                </div>
+              </motion.div>
+            )}
+
+            {currentStep === 3 && (
+              <motion.div
+                key="skills"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="space-y-6"
+              >
+                <div>
+                  <label className="block text-white text-sm font-medium mb-4">
+                    Select Your Skills (Optional)
+                  </label>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-64 overflow-y-auto custom-scrollbar">
+                    {skillSuggestions.map((skill) => (
+                      <motion.button
+                        key={skill}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => handleSkillToggle(skill)}
+                        className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                          formData.skills.includes(skill)
+                            ? 'bg-purple-500 text-white'
+                            : 'bg-white/10 text-gray-300 hover:bg-white/20'
+                        }`}
+                      >
+                        {skill}
+                      </motion.button>
+                    ))}
+                  </div>
+                  {formData.skills.length > 0 && (
+                    <div className="mt-4">
+                      <p className="text-sm text-gray-400 mb-2">Selected skills:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {formData.skills.map((skill) => (
+                          <span
+                            key={skill}
+                            className="px-2 py-1 bg-purple-500 text-white text-xs rounded-full"
+                          >
+                            {skill}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Navigation */}
+          <div className="flex justify-between items-center mt-8">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={handleBack}
+              disabled={currentStep === 0}
+              className={`px-6 py-3 rounded-lg font-medium transition-all ${
+                currentStep === 0
+                  ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                  : 'bg-white/10 text-white hover:bg-white/20'
+              }`}
+            >
+              Back
+            </motion.button>
+
+            {currentStep < steps.length - 1 ? (
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={handleNext}
+                disabled={!isStepValid()}
+                className={`px-6 py-3 rounded-lg font-medium transition-all ${
+                  isStepValid()
+                    ? `bg-gradient-to-r ${steps[currentStep].color} text-white hover:shadow-lg`
+                    : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                }`}
+              >
+                Next
+              </motion.button>
+            ) : (
+              <motion.button
+                whileHover={{ scale: isLoading ? 1 : 1.05 }}
+                whileTap={{ scale: isLoading ? 1 : 0.95 }}
+                onClick={handleStartInterview}
+                disabled={isLoading || !isStepValid()}
+                className={`px-8 py-3 rounded-lg font-medium transition-all flex items-center space-x-2 ${
+                  isStepValid() && !isLoading
+                    ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:shadow-lg'
+                    : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                }`}
+              >
+                {isLoading ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span>Preparing Interview...</span>
+                  </>
+                ) : (
+                  <>
+                    <PlayIcon className="w-5 h-5" />
+                    <span>Start Interview</span>
+                  </>
+                )}
+              </motion.button>
+            )}
+          </div>
+        </motion.div>
+
+        {/* Footer */}
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.6 }}
+          className="text-center mt-8"
+        >
+          <p className="text-gray-400 text-sm">
+            Powered by AI • Built for Success • Your Future Starts Here
+          </p>
         </motion.div>
       </motion.div>
     </div>
