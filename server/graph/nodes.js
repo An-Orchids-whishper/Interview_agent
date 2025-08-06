@@ -172,6 +172,7 @@ async function analyzeAnswerNode(state) {
     }
   } catch (error) {
     console.log('AI evaluation failed, using fallback');
+    // Optionally set evaluation to a default/fallback value
   }
   
   return {
