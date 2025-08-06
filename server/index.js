@@ -55,7 +55,8 @@ io.on('connection', (socket) => {
       if (result.success) {
         socket.emit('interviewStarted', {
           sessionId: currentSessionId,
-          message: result.message,
+          initialHistory: session.getConversationHistory(),
+          message: result.message, // keep for backward compatibility
           phase: result.phase,
           questionCount: result.questionCount,
           maxQuestions: result.maxQuestions

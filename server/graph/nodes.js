@@ -234,10 +234,25 @@ async function generateFollowUpNode(state) {
     followUpQuestion = phaseQuestions[Math.floor(Math.random() * phaseQuestions.length)];
   }
   
+  // Make sure follow-up question is not a duplicate
+  if (!followUpQuestion || state.askedQuestions.includes(followUpQuestion)) {
+    const genericFallback = [
+      "Could you share a bit more detail?",
+      "Can you provide an example to illustrate that?",
+      "I'd love to hear a specific story related to that.",
+      "What was the outcome and what did you learn?"
+    ].filter(q => !state.askedQuestions.includes(q));
+
+    followUpQuestion = genericFallback.length
+      ? genericFallback[Math.floor(Math.random() * genericFallback.length)]
+      : `Thank you! Could you elaborate further on that?`;
+  }
+
   return {
     ...state,
     lastQuestion: followUpQuestion,
     needsFollowUp: false,
+    askedQuestions: [...state.askedQuestions, followUpQuestion],
     conversationHistory: [
       ...state.conversationHistory,
       {
@@ -337,6 +352,49 @@ async function generateNextQuestionNode(state) {
     }
   }
   
+  // Ensure the generated question is unique and non-empty
+  const makeUnique = (question, fallbackList) => {
+    if (!question || state.askedQuestions.includes(question)) {
+      const pool = fallbackList.filter(q => !state.askedQuestions.includes(q));
+      if (pool.length > 0) {
+        return pool[Math.floor(Math.random() * pool.length)];
+      }
+      // Absolute fallback – append a clarifying tail to make it unique
+      return `${question || "Could you tell me more?"} (from a different angle)`;
+    }
+    return question;
+  };
+
+  // Use phase-specific fallback list for uniqueness check
+  const phaseFallbacks = {
+    [INTERVIEW_PHASES.INTRODUCTION]: [
+      "What are your career goals for the next few years?",
+      "What do you know about our company and why do you want to work here?",
+      "What are your greatest professional achievements?",
+      "How do you stay updated with industry trends?"
+    ],
+    [INTERVIEW_PHASES.TECHNICAL]: [
+      "How do you approach debugging complex issues?",
+      "Describe your experience with version control and collaboration tools.",
+      "What's your process for learning new technologies?",
+      "Tell me about a time you had to optimize performance in an application."
+    ],
+    [INTERVIEW_PHASES.BEHAVIORAL]: [
+      "Describe a time when you had to meet a tight deadline.",
+      "Tell me about a time you received constructive criticism.",
+      "How do you handle conflicts in a team environment?",
+      "Describe a situation where you had to adapt to significant changes."
+    ],
+    [INTERVIEW_PHASES.CLOSING]: [
+      "What questions do you have about the team you'd be working with?",
+      "What are your salary expectations for this role?",
+      "When would you be available to start if offered the position?",
+      "Is there anything else you'd like me to know about you?"
+    ]
+  };
+
+  nextQuestion = makeUnique(nextQuestion, phaseFallbacks[nextPhase] || []);
+
   return {
     ...state,
     currentPhase: nextPhase,
@@ -410,10 +468,16 @@ async function clarifyQuestionNode(state) {
       `Let me rephrase that question: ${state.lastQuestion} - Could you share your thoughts on this?`;
   }
   
+  // Avoid duplicates
+  if (!clarification || state.askedQuestions.includes(clarification)) {
+    clarification = `Sure, let me put it another way: ${state.lastQuestion}`;
+  }
+
   return {
     ...state,
     lastQuestion: clarification,
     userRequestedClarification: false,
+    askedQuestions: [...state.askedQuestions, clarification],
     conversationHistory: [
       ...state.conversationHistory,
       {

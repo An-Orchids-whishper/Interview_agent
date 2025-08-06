@@ -87,8 +87,11 @@ class LLMManager {
         console.error(`❌ LLM attempt ${attempt} failed:`, error.message);
         
         if (attempt < maxRetries) {
-          const delay = Math.pow(2, attempt) * 1000; // Exponential backoff
-          console.log(`⏳ Retrying in ${delay}ms...`);
+          // Exponential backoff with jitter (±20%)
+          const baseDelay = Math.pow(2, attempt) * 1000;
+          const jitter = baseDelay * 0.2 * (Math.random() - 0.5); // ±20%
+          const delay = Math.max(500, baseDelay + jitter);
+          console.log(`⏳ Retrying in ${Math.round(delay)}ms...`);
           await new Promise(resolve => setTimeout(resolve, delay));
         }
       }
