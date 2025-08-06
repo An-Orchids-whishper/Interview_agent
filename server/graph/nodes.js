@@ -5,13 +5,15 @@ const { llmManager } = require('./llm');
 async function startInterviewNode(state) {
   const greetings = [
     "Hello! Welcome to your interview today. I'm excited to get to know you better.",
-    "Hi there! Thanks for joining me today. I'm looking forward to our conversation.",
+    "Hi there! Thanks for joining me today. I'm looking forward to our conversation.", 
     "Welcome! I hope you're doing well today. Let's begin with your interview.",
     "Good day! Thank you for your time today. I'm here to learn more about you and your experience."
   ];
 
   const greeting = greetings[Math.floor(Math.random() * greetings.length)];
   const introQuestion = "Let's start with introductions. Could you please tell me your name and a bit about yourself?";
+  
+  const combinedMessage = `${greeting}\n\n${introQuestion}`;
   
   return {
     ...state,
@@ -21,16 +23,12 @@ async function startInterviewNode(state) {
     conversationHistory: [
       {
         role: 'assistant',
-        message: greeting,
-        timestamp: new Date().toISOString()
-      },
-      {
-        role: 'assistant', 
-        message: introQuestion,
+        message: combinedMessage,
         timestamp: new Date().toISOString()
       }
     ],
-    askedQuestions: [introQuestion]
+    askedQuestions: [introQuestion],
+    interviewStarted: true
   };
 }
 
@@ -253,27 +251,57 @@ async function generateNextQuestionNode(state) {
   let nextPhase = state.currentPhase;
   let nextQuestion = '';
   
-  // Phase transition logic
-  if (state.currentPhase === INTERVIEW_PHASES.INTRODUCTION && state.questionCount >= 4) {
-    nextPhase = INTERVIEW_PHASES.TECHNICAL;
-    nextQuestion = "Now let's discuss your technical background. Can you tell me about a challenging project you worked on recently?";
-  } else if (state.currentPhase === INTERVIEW_PHASES.TECHNICAL && state.questionCount >= 8) {
-    nextPhase = INTERVIEW_PHASES.BEHAVIORAL;
-    nextQuestion = "Let's talk about some behavioral scenarios. Tell me about a time when you had to work with a difficult team member.";
-  } else if (state.currentPhase === INTERVIEW_PHASES.BEHAVIORAL && state.questionCount >= 12) {
-    nextPhase = INTERVIEW_PHASES.CLOSING;
-    nextQuestion = "We're nearing the end of our interview. Do you have any questions about the role or our company?";
+  // Improved phase transition logic based on question count and current phase
+  const phaseTransitions = {
+    [INTERVIEW_PHASES.INTRODUCTION]: {
+      minQuestions: 3,
+      maxQuestions: 5,
+      nextPhase: INTERVIEW_PHASES.TECHNICAL,
+      transitionQuestion: "Now let's discuss your technical background. Can you tell me about a challenging project you worked on recently?"
+    },
+    [INTERVIEW_PHASES.TECHNICAL]: {
+      minQuestions: 7,
+      maxQuestions: 9,
+      nextPhase: INTERVIEW_PHASES.BEHAVIORAL,
+      transitionQuestion: "Let's talk about some behavioral scenarios. Tell me about a time when you had to work with a difficult team member."
+    },
+    [INTERVIEW_PHASES.BEHAVIORAL]: {
+      minQuestions: 11,
+      maxQuestions: 13,
+      nextPhase: INTERVIEW_PHASES.CLOSING,
+      transitionQuestion: "We're nearing the end of our interview. Do you have any questions about the role or our company?"
+    }
+  };
+  
+  // Check if we should transition phases
+  const currentTransition = phaseTransitions[state.currentPhase];
+  if (currentTransition && state.questionCount >= currentTransition.minQuestions) {
+    // Consider transitioning if we've reached minimum questions for this phase
+    const shouldTransition = state.questionCount >= currentTransition.maxQuestions ||
+      (state.questionCount >= currentTransition.minQuestions && 
+       state.lastAnswerQuality === ANSWER_QUALITY.GOOD);
+    
+    if (shouldTransition) {
+      nextPhase = currentTransition.nextPhase;
+      nextQuestion = currentTransition.transitionQuestion;
+    }
   }
   
   // Generate phase-appropriate question with AI if no transition
   if (!nextQuestion) {
     try {
+      // Build context from recent conversation for better question generation
+      const recentHistory = state.conversationHistory.slice(-6).map(msg => 
+        `${msg.role}: ${msg.message}`
+      ).join('\n');
+      
       const questionPrompt = `
       Current Phase: ${state.currentPhase}
       Question Count: ${state.questionCount}
       Candidate Profile: ${JSON.stringify(state.candidateProfile)}
       Asked Questions: ${JSON.stringify(state.askedQuestions)}
-      Recent Answer: ${state.lastAnswer}
+      Recent Conversation:
+      ${recentHistory}
       
       Generate the next appropriate interview question for the ${state.currentPhase} phase.
       
@@ -282,43 +310,63 @@ async function generateNextQuestionNode(state) {
       - Build on the candidate's previous answers when possible
       - Use encouraging, professional tone
       - Make it specific and engaging
+      - Consider the flow of the conversation
       
       Phase requirements:
-      - Introduction: Background, motivation, strengths
-      - Technical: Skills, projects, problem-solving
-      - Behavioral: Teamwork, leadership, challenges
-      - Closing: Questions, availability, wrap-up
+      - Introduction: Background, motivation, strengths, company interest
+      - Technical: Skills, projects, problem-solving, technologies
+      - Behavioral: Teamwork, leadership, challenges, adaptability
+      - Closing: Questions, availability, wrap-up, final thoughts
       
       Respond with just the question (no quotes).
       `;
 
       nextQuestion = await llmManager.invoke(questionPrompt);
+      
+      // Validate the generated question
+      if (!nextQuestion || nextQuestion.length < 10 || state.askedQuestions.includes(nextQuestion)) {
+        throw new Error('Invalid or duplicate question generated');
+      }
     } catch (error) {
-      // Fallback to predefined questions
+      console.log('AI question generation failed, using fallback');
+      
+      // Enhanced fallback questions with better variety
       const questionSets = {
         [INTERVIEW_PHASES.INTRODUCTION]: [
           "What are your career goals for the next few years?",
-          "What do you know about our company and why do you want to work here?",
+          "What do you know about our company and why do you want to work here?", 
           "What are your greatest professional achievements?",
-          "How do you stay updated with industry trends?"
+          "How do you stay updated with industry trends?",
+          "What motivates you in your work?",
+          "Describe your ideal work environment.",
+          "What sets you apart from other candidates?"
         ],
         [INTERVIEW_PHASES.TECHNICAL]: [
           "How do you approach debugging complex issues?",
           "Describe your experience with version control and collaboration tools.",
           "What's your process for learning new technologies?",
-          "Tell me about a time you had to optimize performance in an application."
+          "Tell me about a time you had to optimize performance in an application.",
+          "How do you ensure code quality in your projects?",
+          "Describe a technical decision you made that had significant impact.",
+          "How do you handle technical debt in your projects?"
         ],
         [INTERVIEW_PHASES.BEHAVIORAL]: [
           "Describe a time when you had to meet a tight deadline.",
           "Tell me about a time you received constructive criticism.",
           "How do you handle conflicts in a team environment?",
-          "Describe a situation where you had to adapt to significant changes."
+          "Describe a situation where you had to adapt to significant changes.",
+          "Tell me about a time you had to lead a project or initiative.",
+          "How do you prioritize tasks when you have multiple deadlines?",
+          "Describe a mistake you made and how you handled it."
         ],
         [INTERVIEW_PHASES.CLOSING]: [
           "What questions do you have about the team you'd be working with?",
           "What are your salary expectations for this role?",
           "When would you be available to start if offered the position?",
-          "Is there anything else you'd like me to know about you?"
+          "Is there anything else you'd like me to know about you?",
+          "How do you see yourself growing in this role?",
+          "What would success look like to you in this position?",
+          "Do you have any concerns about this role or our company?"
         ]
       };
       
@@ -329,7 +377,7 @@ async function generateNextQuestionNode(state) {
       if (availableQuestions.length > 0) {
         nextQuestion = availableQuestions[Math.floor(Math.random() * availableQuestions.length)];
       } else {
-        // Fallback to closing if no more questions
+        // Ultimate fallback - transition to closing
         nextPhase = INTERVIEW_PHASES.CLOSING;
         nextQuestion = "Thank you for your responses. Do you have any final questions for me?";
       }

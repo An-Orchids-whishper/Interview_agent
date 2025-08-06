@@ -25,6 +25,8 @@ export const SocketProvider = ({ children }) => {
     maxQuestions: 15,
     complete: false
   })
+  const [connectionAttempts, setConnectionAttempts] = useState(0)
+  const [isReconnecting, setIsReconnecting] = useState(false)
 
   useEffect(() => {
     const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:5000'
@@ -38,19 +40,48 @@ export const SocketProvider = ({ children }) => {
     socketInstance.on('connect', () => {
       console.log('Connected to server')
       setConnected(true)
+      setConnectionAttempts(0)
+      setIsReconnecting(false)
       toast.success('Connected to interview server')
     })
 
-    socketInstance.on('disconnect', () => {
-      console.log('Disconnected from server')
+    socketInstance.on('disconnect', (reason) => {
+      console.log('Disconnected from server:', reason)
       setConnected(false)
-      toast.error('Disconnected from server')
+      
+      if (reason === 'io server disconnect') {
+        // Server disconnected us, try to reconnect
+        setIsReconnecting(true)
+        toast.error('Server disconnected. Attempting to reconnect...')
+      } else {
+        toast.error('Disconnected from server')
+      }
     })
 
     socketInstance.on('connect_error', (error) => {
       console.error('Connection error:', error)
       setConnected(false)
-      toast.error('Failed to connect to server')
+      setConnectionAttempts(prev => prev + 1)
+      
+      if (connectionAttempts < 3) {
+        setIsReconnecting(true)
+        toast.error(`Connection failed. Attempt ${connectionAttempts + 1}/3`)
+      } else {
+        setIsReconnecting(false)
+        toast.error('Failed to connect to server. Please check your connection.')
+      }
+    })
+
+    socketInstance.on('reconnect', (attemptNumber) => {
+      console.log('Reconnected after', attemptNumber, 'attempts')
+      setIsReconnecting(false)
+      setConnectionAttempts(0)
+      toast.success('Reconnected to server')
+    })
+
+    socketInstance.on('reconnect_error', (error) => {
+      console.error('Reconnection error:', error)
+      setIsReconnecting(true)
     })
 
     // Interview events
@@ -90,7 +121,7 @@ export const SocketProvider = ({ children }) => {
 
       // Add agent message
       setMessages(prev => [...prev, {
-        id: Date.now(),
+        id: Date.now() + Math.random(), // Ensure unique ID
         role: 'assistant',
         content: data.message,
         timestamp: new Date().toISOString(),
@@ -99,6 +130,7 @@ export const SocketProvider = ({ children }) => {
 
       if (data.complete) {
         toast.success('Interview completed!')
+        setInterviewStatus(prev => ({ ...prev, complete: true }))
       }
     })
 
@@ -134,42 +166,91 @@ export const SocketProvider = ({ children }) => {
   }, [])
 
   const startInterview = (candidateProfile) => {
-    if (socket && connected) {
-      socket.emit('startInterview', { candidateProfile })
-    } else {
-      toast.error('Not connected to server')
+    if (!socket) {
+      toast.error('Socket not initialized')
+      return
     }
+    
+    if (!connected) {
+      toast.error('Not connected to server')
+      return
+    }
+    
+    if (interviewSession && interviewSession.active) {
+      toast.error('Interview is already active')
+      return
+    }
+    
+    if (!candidateProfile || !candidateProfile.name) {
+      toast.error('Please provide candidate profile information')
+      return
+    }
+    
+    console.log('Starting interview with profile:', candidateProfile)
+    socket.emit('startInterview', { candidateProfile })
   }
 
   const sendMessage = (message) => {
-    if (socket && connected && interviewSession) {
-      // Add user message immediately
-      const userMessage = {
-        id: Date.now(),
-        role: 'user',
-        content: message,
-        timestamp: new Date().toISOString()
-      }
-      
-      setMessages(prev => [...prev, userMessage])
-      
-      // Send to server
-      socket.emit('userMessage', { message })
-    } else {
-      toast.error('Cannot send message - not connected or no active session')
+    if (!socket) {
+      toast.error('Socket not initialized')
+      return
     }
+    
+    if (!connected) {
+      toast.error('Not connected to server')
+      return
+    }
+    
+    if (!interviewSession || !interviewSession.active) {
+      toast.error('No active interview session')
+      return
+    }
+    
+    if (!message || !message.trim()) {
+      toast.error('Please provide a message')
+      return
+    }
+
+    // Add user message immediately
+    const userMessage = {
+      id: Date.now(),
+      role: 'user',
+      content: message.trim(),
+      timestamp: new Date().toISOString()
+    }
+    
+    setMessages(prev => [...prev, userMessage])
+    
+    // Send to server
+    socket.emit('userMessage', { message: message.trim() })
   }
 
   const endInterview = () => {
-    if (socket && connected) {
-      socket.emit('endInterview')
+    if (!socket) {
+      toast.error('Socket not initialized')
+      return
     }
+    
+    if (!connected) {
+      toast.error('Not connected to server')
+      return
+    }
+    
+    socket.emit('endInterview')
   }
 
   const getInterviewStatus = () => {
-    if (socket && connected) {
-      socket.emit('getInterviewStatus')
+    if (!socket) {
+      console.warn('Socket not initialized')
+      return
     }
+    
+    if (!connected) {
+      console.warn('Not connected to server')
+      return
+    }
+    
+    socket.emit('getInterviewStatus')
   }
 
   const value = {
@@ -178,6 +259,8 @@ export const SocketProvider = ({ children }) => {
     interviewSession,
     messages,
     interviewStatus,
+    connectionAttempts,
+    isReconnecting,
     startInterview,
     sendMessage,
     endInterview,

@@ -6,6 +6,7 @@ const { v4: uuidv4 } = require('uuid');
 require('dotenv').config();
 
 const { createSession, getSession, removeSession } = require('./graph/graph');
+const { llmManager } = require('./graph/llm');
 
 const app = express();
 const server = http.createServer(app);
@@ -29,6 +30,27 @@ app.use(express.json());
 // Basic health check endpoint
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', message: 'Interview Agent Server is running' });
+});
+
+// LLM health check endpoint
+app.get('/health/llm', async (req, res) => {
+  try {
+    const healthStatus = await llmManager.healthCheck();
+    res.json(healthStatus);
+  } catch (error) {
+    res.status(500).json({
+      status: 'error',
+      message: 'LLM health check failed',
+      error: error.message
+    });
+  }
+});
+
+// Initialize LLM on startup
+llmManager.initialize().then(() => {
+  console.log(`🧠 LLM Provider: ${llmManager.getProvider()}`);
+}).catch(error => {
+  console.error('❌ Failed to initialize LLM on startup:', error);
 });
 
 // Socket.io connection handling

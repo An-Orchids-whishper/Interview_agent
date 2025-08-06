@@ -85,6 +85,10 @@ const InterviewState = {
   lastEvaluation: {
     reducer: (left, right) => right ?? left ?? null,
     default: () => null
+  },
+  interviewStarted: {
+    reducer: (left, right) => right ?? left ?? false,
+    default: () => false
   }
 };
 

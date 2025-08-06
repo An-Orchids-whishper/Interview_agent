@@ -14,7 +14,7 @@ const {
 
 // Routing Functions
 function routeAfterAnalysis(state) {
-  // Handle user requests first
+  // Handle user requests first - these take priority
   if (state.userRequestedRepeat) {
     return NODES.REPEAT_QUESTION;
   }
@@ -23,14 +23,32 @@ function routeAfterAnalysis(state) {
     return NODES.CLARIFY_QUESTION;
   }
   
-  // Check if we need follow-up
-  if (state.needsFollowUp || state.lastAnswerQuality === ANSWER_QUALITY.INSUFFICIENT) {
-    return NODES.GENERATE_FOLLOW_UP;
-  }
-  
-  // Check if interview should end
+  // Check if interview should end (max questions reached)
   if (state.questionCount >= state.maxQuestions) {
     return NODES.CONCLUDE_INTERVIEW;
+  }
+  
+  // If we're in closing phase and have enough questions, conclude
+  if (state.currentPhase === INTERVIEW_PHASES.CLOSING && state.questionCount >= (state.maxQuestions - 2)) {
+    return NODES.CONCLUDE_INTERVIEW;
+  }
+  
+  // Check if we need follow-up based on answer quality
+  if (state.needsFollowUp || 
+      state.lastAnswerQuality === ANSWER_QUALITY.INSUFFICIENT ||
+      state.lastAnswerQuality === ANSWER_QUALITY.NEEDS_CLARIFICATION) {
+    // But don't do too many follow-ups for the same question
+    const recentFollowUps = state.conversationHistory
+      .slice(-4) // Look at last 4 messages
+      .filter(msg => msg.role === 'assistant' && 
+        (msg.message.toLowerCase().includes('elaborate') ||
+         msg.message.toLowerCase().includes('could you') ||
+         msg.message.toLowerCase().includes('can you provide')))
+      .length;
+    
+    if (recentFollowUps < 2) { // Maximum 2 follow-ups before moving on
+      return NODES.GENERATE_FOLLOW_UP;
+    }
   }
   
   // Move to next question
@@ -291,7 +309,7 @@ class EnhancedInterviewSession {
         newState.userRequestedClarification = true;
       }
       
-      // Process through answer processing graph
+      // Process through answer processing graph starting from analyze answer
       const result = await this.answerGraph.invoke(newState, {
         configurable: { 
           thread_id: this.sessionId,
@@ -299,7 +317,13 @@ class EnhancedInterviewSession {
         }
       });
       
-      this.state = { ...this.state, ...result };
+      // Merge only the important fields from the result to avoid overwriting
+      this.state = { 
+        ...this.state, 
+        ...result,
+        // Ensure we preserve conversation history properly
+        conversationHistory: result.conversationHistory || this.state.conversationHistory
+      };
       
       return {
         success: true,

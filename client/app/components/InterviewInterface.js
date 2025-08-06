@@ -43,65 +43,114 @@ export default function InterviewInterface({ candidateProfile, onEndInterview })
   // Initialize interview when component mounts
   useEffect(() => {
     if (connected && !interviewSession && !isInitialized) {
-      startInterview(candidateProfile)
-      setIsInitialized(true)
+      console.log('Initializing interview with profile:', candidateProfile);
+      startInterview(candidateProfile);
+      setIsInitialized(true);
     }
-  }, [connected, interviewSession, candidateProfile, startInterview, isInitialized])
+  }, [connected, interviewSession, candidateProfile, startInterview, isInitialized]);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages]);
 
-  // Auto-speak agent messages
+  // Auto-speak agent messages with improved error handling
   useEffect(() => {
     if (autoSpeak && messages.length > 0) {
-      const lastMessage = messages[messages.length - 1]
+      const lastMessage = messages[messages.length - 1];
       if (lastMessage.role === 'assistant' && 'speechSynthesis' in window) {
-        const utterance = new SpeechSynthesisUtterance(lastMessage.content)
-        utterance.rate = 0.9
-        utterance.pitch = 1
-        utterance.volume = 0.8
+        // Cancel any existing speech
+        speechSynthesis.cancel();
         
-        // Use a pleasant voice if available
-        const voices = speechSynthesis.getVoices()
-        const preferredVoice = voices.find(voice => 
-          voice.name.includes('Google') || 
-          voice.name.includes('Microsoft') ||
-          voice.lang.startsWith('en')
-        )
-        if (preferredVoice) {
-          utterance.voice = preferredVoice
-        }
-        
-        speechSynthesis.speak(utterance)
+        // Wait a moment before starting new speech
+        setTimeout(() => {
+          try {
+            const utterance = new SpeechSynthesisUtterance(lastMessage.content);
+            utterance.rate = 0.9;
+            utterance.pitch = 1;
+            utterance.volume = 0.8;
+            
+            // Use a pleasant voice if available
+            const voices = speechSynthesis.getVoices();
+            const preferredVoice = voices.find(voice => 
+              voice.name.includes('Google') || 
+              voice.name.includes('Microsoft') ||
+              voice.lang.startsWith('en')
+            );
+            if (preferredVoice) {
+              utterance.voice = preferredVoice;
+            }
+            
+            utterance.onerror = (event) => {
+              console.warn('Speech synthesis error:', event.error);
+            };
+            
+            speechSynthesis.speak(utterance);
+          } catch (error) {
+            console.warn('Speech synthesis failed:', error);
+          }
+        }, 100);
       }
     }
-  }, [messages, autoSpeak])
+  }, [messages, autoSpeak]);
 
   const handleSendMessage = (e) => {
-    e.preventDefault()
+    e.preventDefault();
     
-    if (!inputMessage.trim() || !connected || !interviewSession) {
-      return
+    if (!inputMessage.trim()) {
+      return;
+    }
+    
+    if (!connected) {
+      toast.error('Not connected to server. Please wait for connection.');
+      return;
+    }
+    
+    if (!interviewSession) {
+      toast.error('No active interview session. Please start the interview.');
+      return;
     }
 
-    setIsThinking(true)
-    sendMessage(inputMessage.trim())
-    setInputMessage('')
-    setIsTyping(false)
+    setIsThinking(true);
+    sendMessage(inputMessage.trim());
+    setInputMessage('');
+    setIsTyping(false);
     
-    // Simulate AI thinking time
-    setTimeout(() => setIsThinking(false), 2000)
-  }
+    // Reset thinking state after a reasonable timeout
+    setTimeout(() => {
+      if (isThinking) {
+        setIsThinking(false);
+      }
+    }, 10000); // 10 second timeout
+  };
 
   const handleVoiceMessage = (transcript) => {
-    if (transcript && connected && interviewSession) {
-      setIsThinking(true)
-      sendMessage(transcript)
-      setTimeout(() => setIsThinking(false), 2000)
+    if (!transcript) {
+      return;
     }
-  }
+    
+    if (!connected) {
+      toast.error('Not connected to server. Please wait for connection.');
+      return;
+    }
+    
+    if (!interviewSession) {
+      toast.error('No active interview session. Please start the interview.');
+      return;
+    }
+    
+    setIsThinking(true);
+    sendMessage(transcript);
+    
+    // Reset thinking state after timeout
+    setTimeout(() => {
+      if (isThinking) {
+        setIsThinking(false);
+      }
+    }, 10000);
+  };
 
   const handleEndInterview = () => {
     if (window.confirm('Are you sure you want to end the interview?')) {
