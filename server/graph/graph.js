@@ -32,7 +32,10 @@ function routeAfterAnalysis(state) {
   if (state.questionCount >= state.maxQuestions) {
     return NODES.CONCLUDE_INTERVIEW;
   }
-  
+  // If still in introduction phase and not all intro questions asked, go to askIntroductionNode
+  if (state.currentPhase === INTERVIEW_PHASES.INTRODUCTION && state.questionCount < 5) {
+    return NODES.ASK_INTRODUCTION;
+  }
   // Move to next question
   return NODES.GENERATE_NEXT_QUESTION;
 }
@@ -55,6 +58,7 @@ function createInterviewGraph() {
 
   // Add all nodes
   workflow.addNode(NODES.START_INTERVIEW, startInterviewNode);
+  workflow.addNode(NODES.ASK_INTRODUCTION, askIntroductionNode); // <-- Add this line
   workflow.addNode(NODES.ANALYZE_ANSWER, analyzeAnswerNode);
   workflow.addNode(NODES.GENERATE_FOLLOW_UP, generateFollowUpNode);
   workflow.addNode(NODES.GENERATE_NEXT_QUESTION, generateNextQuestionNode);
@@ -65,10 +69,10 @@ function createInterviewGraph() {
 
   // Add edges - proper routing logic
   workflow.addEdge(START, NODES.START_INTERVIEW);
-  
-  // From start interview, end execution (wait for user input)
-  workflow.addEdge(NODES.START_INTERVIEW, END);
-  
+  // After start interview, go to ask introduction (not END)
+  workflow.addEdge(NODES.START_INTERVIEW, NODES.ASK_INTRODUCTION);
+  // After ask introduction, analyze answer
+  workflow.addEdge(NODES.ASK_INTRODUCTION, NODES.ANALYZE_ANSWER);
   // After analyzing answer, route based on state
   workflow.addConditionalEdges(
     NODES.ANALYZE_ANSWER,

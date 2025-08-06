@@ -35,6 +35,7 @@ async function startInterviewNode(state) {
 }
 
 // Node: Ask Introduction Questions
+// This node handles the sequence of introduction questions. When all are asked, it transitions to the technical phase.
 async function askIntroductionNode(state) {
   const introQuestions = [
     "What interests you most about this position?",
@@ -47,6 +48,7 @@ async function askIntroductionNode(state) {
   // Filter out already asked questions
   const availableQuestions = introQuestions.filter(q => !state.askedQuestions.includes(q));
   
+  // If all intro questions asked or questionCount >= 5, transition to technical phase
   if (availableQuestions.length === 0 || state.questionCount >= 5) {
     // Move to technical phase
     const techQuestion = "Now let's talk about your technical experience. Can you describe a challenging project you worked on recently?";
@@ -67,10 +69,12 @@ async function askIntroductionNode(state) {
     };
   }
 
+  // Otherwise, ask the next available introduction question
   const nextQuestion = availableQuestions[Math.floor(Math.random() * availableQuestions.length)];
   
   return {
     ...state,
+    currentPhase: INTERVIEW_PHASES.INTRODUCTION, // Ensure phase is set
     lastQuestion: nextQuestion,
     questionCount: state.questionCount + 1,
     askedQuestions: [...state.askedQuestions, nextQuestion],
