@@ -1,5 +1,43 @@
 # 🚀 AI-Powered Interview Agent
 
+## 🏁 How to Run This Program (Demo-Ready)
+
+### 1. **Clone the Repository**
+```bash
+git clone https://github.com/your-username/ai-interview-agent.git
+cd ai-interview-agent
+```
+
+### 2. **Install All Dependencies**
+```bash
+npm run install:all
+```
+
+### 3. **Set Up Environment Variables**
+- Copy `.env.example` to `.env` in `/server` and `.env.local` in `/client`.
+- Add your AI API key(s) (Google Gemini recommended for free tier).
+
+### 4. **Start the Backend**
+```bash
+cd server
+npm start
+```
+
+### 5. **Start the Frontend**
+```bash
+cd ../client
+npm run dev
+```
+
+- The app will be available at [http://localhost:3000](http://localhost:3000)
+
+### 6. **Troubleshooting**
+- If you see connection errors, check that both backend and frontend are running and environment variables are set.
+- For AI issues, ensure your API key is valid and you have internet access.
+- For any other issues, check the terminal output for errors and restart the servers if needed.
+
+---
+
 A stunning, production-ready AI interview system built with Next.js, LangGraph, and real-time communication. Experience the future of interviews with intelligent AI that adapts to your responses and provides real-time feedback.
 
 ![AI Interview Agent](https://img.shields.io/badge/AI-Powered-blue) ![Next.js](https://img.shields.io/badge/Next.js-14-black) ![LangGraph](https://img.shields.io/badge/LangGraph-AI-green) ![Socket.io](https://img.shields.io/badge/Socket.io-Real--Time-red)
