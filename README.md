@@ -1,5 +1,34 @@
 # 🚀 AI-Powered Interview Agent
 
+## 🏁 How to Run This Program (Quick Start)
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/your-username/ai-interview-agent.git
+   cd ai-interview-agent
+   ```
+2. **Install all dependencies**
+   ```bash
+   npm run install:all
+   ```
+3. **Set up environment variables**
+   - Copy `.env.example` to `.env` in `/server` and `.env.local` in `/client` (see below for details)
+   - Add your AI API key(s) if available (Google Gemini recommended for free tier)
+4. **Start the development servers**
+   ```bash
+   npm run dev
+   ```
+   - This will start both the backend (http://localhost:5000) and frontend (http://localhost:3000)
+5. **Open your browser**
+   - Go to [http://localhost:3000](http://localhost:3000) to use the app
+
+**Troubleshooting:**
+- If you see connection errors, make sure both client and server are running and the ports match your `.env` files.
+- If you have no AI API key, the app will use fallback responses (still works for demo/testing).
+- For voice features, use Chrome or a modern browser and allow microphone access.
+
+---
+
 A stunning, production-ready AI interview system built with Next.js, LangGraph, and real-time communication. Experience the future of interviews with intelligent AI that adapts to your responses and provides real-time feedback.
 
 ![AI Interview Agent](https://img.shields.io/badge/AI-Powered-blue) ![Next.js](https://img.shields.io/badge/Next.js-14-black) ![LangGraph](https://img.shields.io/badge/LangGraph-AI-green) ![Socket.io](https://img.shields.io/badge/Socket.io-Real--Time-red)
@@ -55,59 +84,6 @@ A stunning, production-ready AI interview system built with Next.js, LangGraph, 
 - **Google Gemini** - Primary AI model (free tier available)
 - **OpenAI GPT** - Alternative AI provider
 - **OpenRouter** - Multiple model access point
-
-## 🚀 Quick Start
-
-### Prerequisites
-- Node.js 18+ installed
-- npm or yarn package manager
-- Optional: AI API keys (Google, OpenAI, or OpenRouter)
-
-### Installation
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/your-username/ai-interview-agent.git
-   cd ai-interview-agent
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm run install:all
-   ```
-
-3. **Set up environment variables**
-   
-   **Server (.env in /server folder):**
-   ```env
-   PORT=5000
-   NODE_ENV=development
-   CLIENT_URL=http://localhost:3000
-   
-   # Choose one AI provider (Google Gemini recommended for free tier)
-   GOOGLE_API_KEY=your_google_api_key_here
-   # OPENAI_API_KEY=your_openai_api_key_here
-   # OPENROUTER_API_KEY=your_openrouter_api_key_here
-   
-   MAX_QUESTIONS=15
-   INTERVIEW_TIMEOUT_MINUTES=60
-   ```
-   
-   **Client (.env.local in /client folder):**
-   ```env
-   NEXT_PUBLIC_SERVER_URL=http://localhost:5000
-   NEXT_PUBLIC_APP_NAME="AI Interview Agent"
-   NEXT_PUBLIC_VERSION="1.0.0"
-   ```
-
-4. **Start the development servers**
-   ```bash
-   npm run dev
-   ```
-
-5. **Open your browser**
-   - Navigate to `http://localhost:3000`
-   - Server runs on `http://localhost:5000`
 
 ## 🎮 Usage Guide
 
