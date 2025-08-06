@@ -66,14 +66,24 @@ export const SocketProvider = ({ children }) => {
         maxQuestions: data.maxQuestions,
         complete: false
       })
-      
-      // Add initial message
-      setMessages([{
-        id: Date.now(),
-        role: 'assistant',
-        content: data.message,
-        timestamp: new Date().toISOString()
-      }])
+
+      // If server provides full initial history, use it, else fallback to single message
+      if (Array.isArray(data.initialHistory) && data.initialHistory.length) {
+        const formatted = data.initialHistory.map((msg, idx) => ({
+          id: Date.now() + idx,
+          role: msg.role === 'assistant' ? 'assistant' : 'user',
+          content: msg.message,
+          timestamp: msg.timestamp
+        }))
+        setMessages(formatted)
+      } else {
+        setMessages([{
+          id: Date.now(),
+          role: 'assistant',
+          content: data.message,
+          timestamp: new Date().toISOString()
+        }])
+      }
       
       toast.success('Interview started successfully!')
     })

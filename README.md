@@ -58,6 +58,17 @@ A stunning, production-ready AI interview system built with Next.js, LangGraph, 
 
 ## 🚀 Quick Start
 
+### 📂 How to Run (TL;DR)
+
+| Environment | Command |
+|-------------|---------|
+| **Development** | `npm run dev` |
+| **Production (build & serve)** | `npm run build && npm start` |
+
+These commands work from the **project root** and will automatically start both the client (Next.js on port 3000) and the server (Express on port 5000) using the scripts defined in `package.json`.
+
+Make sure you have followed the *Prerequisites* and *Installation* steps below first, and that your `.env` files are configured with the required API keys.
+
 ### Prerequisites
 - Node.js 18+ installed
 - npm or yarn package manager
